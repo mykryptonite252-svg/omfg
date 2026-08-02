@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Fedora Workstation</short>
+  <description>Hardened. No inbound listeners, no discovery, no legacy sharing.
+  Outbound and established connections are unaffected - conntrack still permits
+  return traffic, so NAT hole-punching for Tailscale and RustDesk still works.</description>
+  <!-- Deliberately empty: no 1025-65535 range, no samba, no ssh, no mdns,
+       no dhcpv6-client. Add back individually if something actually needs it. -->
+</zone>

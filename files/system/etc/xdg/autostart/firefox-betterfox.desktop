@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Apply Betterfox to Firefox profiles
+Exec=/usr/bin/firefox-betterfox
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

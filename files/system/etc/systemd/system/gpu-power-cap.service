@@ -1,0 +1,11 @@
+[Unit]
+Description=Cap NVIDIA dGPU power limit at 65W (thermal headroom on shared heatpipes)
+ConditionPathExists=/usr/bin/nvidia-smi
+After=multi-user.target suspend.target hibernate.target suspend-then-hibernate.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nvidia-smi --power-limit=65
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target suspend-then-hibernate.target

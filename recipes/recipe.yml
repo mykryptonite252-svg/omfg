@@ -1,45 +1,284 @@
----
-# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/<user>/<name>
-name: omfg
-# description will be included in the image's metadata
-description: This is my personal OS image.
+name: aurora-g7
+description: Aurora + G7 7590 thermal caps, webcam fixes, hardening, and apps
+base-image: ghcr.io/ublue-os/aurora-nvidia-open
+image-version: stable
 
-# the base image to build on top of (FROM) and the version tag to use
-base-image: ghcr.io/ublue-os/silverblue-main
-image-version: 42 # latest is also supported if you want new updates ASAP
-
-# module configuration, executed in order
-# you can include multiple instances of the same module
 modules:
   - type: files
     files:
       - source: system
-        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+        destination: /
 
+  # ------------------------------------------------------------ packages
   - type: dnf
     repos:
-      copr:
-        - atim/starship
+      keys:
+        - https://packages.microsoft.com/keys/microsoft.asc
     install:
+      skip-unavailable: true
       packages:
-        - micro
-        - starship
+        - v4l-utils
+        # VS Code, native. The Flatpak cannot self-update and nags permanently.
+        - code
+        # REQUIRED: glibc depends on a langpack. Removing glibc-all-langpacks
+        # without this in the same transaction breaks the build.
+        - glibc-langpack-en
+        # --- ClamAV, native. A sandboxed scanner cannot scan the host. ---
+        - clamav              # the scanner engine + clamscan CLI
+        - clamav-lib          # shared engine library
+        - clamav-freshclam    # freshclam, the signature updater (NOT clamav-update)
+        - clamav-filesystem   # /var/lib/clamav layout + user
+        - clamd               # daemon: on-access scanning via fanotify
+        - clamtk              # GTK front-end - scan/quarantine/schedule from a window
+        # --- Logitech device management for the Bolt receiver ---
+        - solaar
+        # --- video playback, native: uses system libva directly, so hardware
+        #     decode works without the Flatpak driver-path override ---
+        - mpv
+        - libva-utils
+        # GUI video player, native: KDE-integrated AND uses system libva, so it
+        # gets hardware decode without the Flatpak driver-path override.
+        - haruna
+        # --- monitoring: lighter and denser than plasma-systemmonitor ---
+        - btop
+        # --- disks: partition, format, SMART health, image restore ---
+        - gnome-disk-utility
+        # --- backup: GUI front-end for BorgBackup (borg is already in the base) ---
+        - vorta
+        # --- firmware/BIOS updates via LVFS, with a window instead of a CLI ---
+        - gnome-firmware
     remove:
+      auto-remove: true
       packages:
-        # example: removing firefox (in favor of the flatpak)
-        # "firefox" is the main package, "firefox-langpacks" is a dependency
-        - firefox
-        - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+        # --- VM guest agents (this is bare metal) ---
+        - hyperv-daemons
+        - hypervkvpd
+        - hypervvssd
+        - hypervfcopyd
+        - open-vm-tools
+        - open-vm-tools-desktop
+        - spice-vdagent
+        - spice-webdavd
+        - qemu-guest-agent
+        - qemu-user-static-aarch64
+        # --- server software ---
+        - mariadb-server
+        - mariadb
+        - mariadb-backup
+        - Sunshine
+        # --- CJK input methods (37 packages) ---
+        - fcitx5
+        - fcitx5-chinese-addons
+        - fcitx5-mozc
+        - fcitx5-hangul
+        - fcitx5-chewing
+        - fcitx5-unikey
+        - fcitx5-libthai
+        - fcitx5-sayura
+        - fcitx5-m17n
+        - fcitx5-configtool
+        - kcm-fcitx5
+        - fcitx5-data
+        - fcitx5-libs
+        - fcitx5-lua
+        - fcitx5-gtk
+        - fcitx5-gtk3
+        - fcitx5-gtk4
+        - fcitx5-qt
+        - fcitx5-qt5
+        - fcitx5-qt6
+        - fcitx5-qt-qt6gui
+        - fcitx5-qt-libfcitx5qtdbus
+        - fcitx5-qt-libfcitx5qt6widgets
+        - fcitx5-chinese-addons-data
+        - ibus-anthy
+        - ibus-libpinyin
+        - ibus-hangul
+        - ibus-chewing
+        - ibus-m17n
+        - ibus-typing-booster
+        - anthy-unicode
+        - kasumi-common
+        - kasumi-unicode
+        # --- printing + scanning ---
+        - hplip
+        - hplip-common
+        - hplip-libs
+        - plasma-print-manager
+        - plasma-print-manager-libs
+        - gutenprint
+        - gutenprint-cups
+        - splix
+        - foo2zjs
+        - c2esp
+        - dymo-cups-drivers
+        - printer-driver-brlaser
+        - ptouch-driver
+        - bluez-cups
+        - mpage
+        - sane-backends
+        - sane-backends-drivers-scanners
+        - sane-backends-drivers-cameras
+        - sane-airscan
+        - ipp-usb
+        # --- accessibility hardware ---
+        - brltty
+        - brlapi
+        - braille-printer-app
+        # --- desktop apps + widgets ---
+        - kdeplasma-addons          # sticky notes, comic, puzzle, timer, weather, +13
+        - plasma-wallpapers-dynamic
+        - plasma-wallpapers-dynamic-builder
+        - plasma-browser-integration
+        - plasma-welcome
+        - plasma-vault
+        - kde-connect
+        - kde-connect-libs
+        - kdeconnectd
+        - krdp
+        - krdp-libs
+        - kamera
+        - kairpods
+        - kio-gdrive
+        - kwrite
+        - kfind
+        - ksystemlog
+        - kjournald
+        - kjournald-libs
+        - kdebugsettings
+        - kde-partitionmanager
+        - audiocd-kio
+        - audiocd-kio-doc
+        # --- gaming ---
+        - gamemode
+        - game-music-emu
+        - oversteer-udev
+        - openrgb-udev-rules
+        - igt-gpu-tools
+        # --- networking you don't use ---
+        - samba
+        - samba-client
+        - samba-client-libs
+        - samba-common
+        - samba-common-tools
+        - samba-core-libs
+        - samba-dcerpc
+        - samba-ldb-ldap-modules
+        - samba-libs
+        - samba-ndr-libs
+        - samba-usershares
+        - samba-winbind
+        - samba-winbind-clients
+        - samba-winbind-modules
+        - kdenetwork-filesharing
+        - NetworkManager-openvpn
+        - NetworkManager-openconnect
+        - NetworkManager-vpnc
+        - plasma-nm-openvpn
+        - plasma-nm-openconnect
+        - plasma-nm-vpnc
+        - nfs-utils
+        - autofs
+        - davfs2
+        - cifs-utils
+        # --- exotic filesystems + clustering ---
+        - jfsutils
+        - nilfs-utils
+        - ocfs2-tools
+        - hfsplus-tools
+        - hfsutils
+        - mtools
+        - lrzsz
+        # --- language + OCR data ---
+        - glibc-all-langpacks
+        - gawk-all-langpacks
+        - hunspell-en-AU
+        - hunspell-en-CA
+        - hunspell-en-GB
+        - tesseract-langpack-chi_sim
+        - tesseract-langpack-chi_sim_vert
+        - tesseract-langpack-chi_tra
+        - tesseract-langpack-chi_tra_vert
+        - tesseract-langpack-jpn
+        - tesseract-langpack-jpn_vert
+        - tesseract-langpack-deu
+        - tesseract-langpack-fra
+        - tesseract-langpack-fin
+        - tesseract-langpack-hin
+        - tesseract-langpack-ita
+        - tesseract-langpack-nld
+        - tesseract-langpack-pol
+        - tesseract-langpack-por
+        - tesseract-langpack-spa
+        # --- misc dead weight ---
+        - b43-fwcutter
+        - b43-openfwwf
+        - antiword
+        - catdoc
+        - input-remapper
+        # --- the phantom "OBS Virtual Camera" at the source. These ship in the
+        #     base image and autoload themselves, stealing /dev/video0 and
+        #     shifting the MX Brio to video1/video2. NOTE: v4l-utils is a
+        #     DIFFERENT package and stays - it's the Brio tooling. ---
+        - v4l2loopback
+        - kmod-v4l2loopback
 
+  # ------------------------------------------------------------ config files
+  # ------------------------------------------------------------ services
+  - type: systemd
+    system:
+      enabled:
+        - cpu-power-cap.service
+        - gpu-power-cap.service
+        - flatpak-hardening.service
+        - clamav-freshclam.service
+      disabled:
+        - NetworkManager-wait-online.service
+      masked:
+        - cups.service
+        - cups.socket
+        - cups-browsed.service
+        - avahi-daemon.service
+        - avahi-daemon.socket
+        - ModemManager.service
+        - sssd.service
+        - sssd-kcm.socket
+        - geoclue.service
+        - zfs-import-cache.service
+        - aurora-zfs-deprecation-notifier.timer
+        - mdmonitor.service
+        - raid-check.timer
+        - systemd-homed.service
+        - systemd-homed-activate.service
+        - sysstat.service
+        - sysstat-collect.timer
+        - sysstat-summary.timer
+        - sysstat-rotate.timer
+        - dnf-makecache.timer
+        - rpcbind.service
+        - rpcbind.socket
+    user:
+      masked:
+        - obex.service              # Bluetooth file transfer; audio is unaffected
+        - podman-auto-update.timer  # nightly container pulls you don't run
+        - speech-dispatcher.socket
+
+  # ------------------------------------------------------------ apps
   - type: default-flatpaks
-    configurations:
-      - notify: true # Send notification after install/uninstall is finished (true/false)
-        scope: system
-        # If no repo information is specified, Flathub will be used by default
-        install: # system flatpaks we want all users to have and not remove
-          - org.mozilla.firefox
-          - org.gnome.Loupe
-      - scope: user # Also add Flathub user repo, but no user packages
+    notify: true
+    system:
+      install:
+        - com.brave.Browser
+        - org.mozilla.firefox
+        - org.keepassxc.KeePassXC
+        - io.ente.auth
+        - us.zoom.Zoom
+        - com.tutanota.Tutanota
+        - it.belloworld.mercurygram
+        - hu.irl.cameractrls
+        - org.onlyoffice.desktopeditors
+        - io.missioncenter.MissionCenter
+        - com.github.tchx84.Flatseal
+        - io.github.flattool.Warehouse
 
-  - type: signing # this sets up the proper policy & signing files for signed images to work fully
+  - type: signing

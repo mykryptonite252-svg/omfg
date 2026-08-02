@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Applied once per boot. Flatpak overrides live in /var, so they cannot ship
+# inside the image itself.
+set -u
+
+# ---------------------------------------------------------------- KeePassXC
+# Upstream ships filesystems=host - full access to everything you own. Replace
+# it with just the vault directory.
+flatpak override --system --nofilesystem=host org.keepassxc.KeePassXC
+# Vault currently lives at ~/Passwords.kdbx. Both are granted so it keeps
+# working whether you leave it there or move it into ~/Documents.
+# NOTE: KeePassXC writes a backup file NEXT TO the vault when saving, so it
+# needs write access to the DIRECTORY, not just the file.
+flatpak override --system --filesystem=~/Documents org.keepassxc.KeePassXC
+flatpak override --system --filesystem=~/Passwords.kdbx org.keepassxc.KeePassXC
+
+# Browser integration needs BOTH of these or the extension silently can't find
+# KeePassXC: the proxy socket lives in /tmp, and the native-messaging manifest
+# must be written into Brave's own config tree.
+flatpak override --system --filesystem=/tmp org.keepassxc.KeePassXC
+flatpak override --system \
+  --filesystem=~/.var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/NativeMessagingHosts:create \
+  org.keepassxc.KeePassXC
+flatpak override --system --filesystem=/tmp com.brave.Browser
+
+# SSH agent integration - drop this line if you don't use it.
+flatpak override --system --socket=ssh-auth org.keepassxc.KeePassXC
+
+# ---------------------------------------------------------------- Brave
+# Hardware video decode. Both variables are required; with only the first one
+# it silently falls back to CPU decode, which is a real thermal cost here.
+flatpak override --system --env=LIBVA_DRIVER_NAME=iHD com.brave.Browser
+flatpak override --system --env=LIBVA_DRIVERS_PATH=/usr/lib64/dri com.brave.Browser
+# NOTE: host-etc is deliberately NOT removed. Brave's Flatpak wrapper reads
+# managed policy from /run/host/etc/brave/policies/managed - revoking host-etc
+# silently disables every policy in that file.
+flatpak override --system --disallow=bluetooth com.brave.Browser
+
+# ---------------------------------------------------------------- tighten
+# Discord and Zoom do not need your Pictures/Videos folders.
+flatpak override --system --nofilesystem=xdg-pictures com.discordapp.Discord
+flatpak override --system --nofilesystem=xdg-videos com.discordapp.Discord
+
+exit 0

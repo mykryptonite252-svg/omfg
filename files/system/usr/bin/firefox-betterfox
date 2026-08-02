@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Installs the pinned Betterfox user.js into every Firefox profile.
+# Firefox profile dirs are randomly named and only exist after first launch,
+# so this runs at login rather than being bakeable into the image.
+set -u
+SRC=/usr/share/betterfox/user.js
+BASE="$HOME/.var/app/org.mozilla.firefox/.mozilla/firefox"
+[ -f "$SRC" ] || exit 0
+[ -d "$BASE" ] || exit 0
+for prof in "$BASE"/*.default* "$BASE"/*.dev-edition*; do
+  [ -d "$prof" ] || continue
+  # Don't clobber a user.js you edited yourself.
+  if [ -f "$prof/user.js" ] && ! grep -q "Betterfox" "$prof/user.js" 2>/dev/null; then
+    continue
+  fi
+  cat "$SRC" /usr/share/betterfox/overrides.js > "$prof/user.js"
+  chmod 0644 "$prof/user.js"
+done
+exit 0

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone target="ACCEPT">
+  <short>Trusted</short>
+  <description>All network connections are accepted. Tailscale's own interface
+  is pinned here so peer-to-peer stays direct instead of falling back to a DERP
+  relay, which is both slower and routes traffic through third-party servers.</description>
+  <interface name="tailscale0"/>
+</zone>

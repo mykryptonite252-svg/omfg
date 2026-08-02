@@ -1,0 +1,10 @@
+# Logitech MX Brio (046d:0944) - disable USB autosuspend.
+#
+# The system-wide usbcore autosuspend delay is 2 seconds. Logitech UVC webcams
+# handle USB runtime suspend poorly: the device re-enumerates on wake, which
+# shifts its /dev/video* node number (observed live: video2 -> video1) and
+# causes black frames or the camera vanishing mid-call.
+#
+# Pinning power/control=on keeps the camera on the bus. Costs roughly 0.5-1W
+# at idle, which is acceptable on a permanently AC-powered machine.
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="046d", ATTR{idProduct}=="0944", TEST=="power/control", ATTR{power/control}="on"

@@ -1,0 +1,12 @@
+[Unit]
+Description=Cap CPU sustained package power (RAPL PL1) at 55W
+Documentation=https://www.kernel.org/doc/html/latest/power/powercap/powercap.html
+ConditionPathExists=/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw
+After=multi-user.target suspend.target hibernate.target suspend-then-hibernate.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sh -c 'echo 55000000 > /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw'
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target suspend-then-hibernate.target

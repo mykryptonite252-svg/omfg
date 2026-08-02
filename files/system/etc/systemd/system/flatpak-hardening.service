@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply Flatpak permission overrides
+After=multi-user.target
+ConditionPathExists=/usr/bin/flatpak-hardening
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak-hardening
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
