@@ -9,7 +9,6 @@ modules:
       - source: system
         destination: /
 
-  # ------------------------------------------------------------ packages
   - type: dnf
     repos:
       keys:
@@ -18,37 +17,24 @@ modules:
       skip-unavailable: true
       packages:
         - v4l-utils
-        # VS Code, native. The Flatpak cannot self-update and nags permanently.
         - code
-        - glibc-langpack-en
-        # --- ClamAV, native. A sandboxed scanner cannot scan the host. ---
-        - clamav              # the scanner engine + clamscan CLI
-        - clamav-lib          # shared engine library
-        - clamav-freshclam    # freshclam, the signature updater (NOT clamav-update)
-        - clamav-filesystem   # /var/lib/clamav layout + user
-        - clamd               # daemon: on-access scanning via fanotify
-        - clamtk              # GTK front-end - scan/quarantine/schedule from a window
-        # --- Logitech device management for the Bolt receiver ---
+        - clamav
+        - clamav-lib
+        - clamav-freshclam
+        - clamav-filesystem
+        - clamd
+        - clamtk
         - solaar
-        # --- video playback, native: uses system libva directly, so hardware
-        #     decode works without the Flatpak driver-path override ---
         - mpv
         - libva-utils
-        # GUI video player, native: KDE-integrated AND uses system libva, so it
-        # gets hardware decode without the Flatpak driver-path override.
         - haruna
-        # --- monitoring: lighter and denser than plasma-systemmonitor ---
         - btop
-        # --- disks: partition, format, SMART health, image restore ---
         - gnome-disk-utility
-        # --- backup: GUI front-end for BorgBackup (borg is already in the base) ---
         - vorta
-        # --- firmware/BIOS updates via LVFS, with a window instead of a CLI ---
         - gnome-firmware
     remove:
       auto-remove: true
       packages:
-        # --- VM guest agents (this is bare metal) ---
         - hyperv-daemons
         - hypervkvpd
         - hypervvssd
@@ -59,12 +45,10 @@ modules:
         - spice-webdavd
         - qemu-guest-agent
         - qemu-user-static-aarch64
-        # --- server software ---
         - mariadb-server
         - mariadb
         - mariadb-backup
         - Sunshine
-        # --- CJK input methods (37 packages) ---
         - fcitx5
         - fcitx5-chinese-addons
         - fcitx5-mozc
@@ -98,7 +82,6 @@ modules:
         - anthy-unicode
         - kasumi-common
         - kasumi-unicode
-        # --- printing + scanning ---
         - hplip
         - hplip-common
         - hplip-libs
@@ -119,12 +102,10 @@ modules:
         - sane-backends-drivers-cameras
         - sane-airscan
         - ipp-usb
-        # --- accessibility hardware ---
         - brltty
         - brlapi
         - braille-printer-app
-        # --- desktop apps + widgets ---
-        - kdeplasma-addons          # sticky notes, comic, puzzle, timer, weather, +13
+        - kdeplasma-addons
         - plasma-wallpapers-dynamic
         - plasma-wallpapers-dynamic-builder
         - plasma-browser-integration
@@ -147,13 +128,11 @@ modules:
         - kde-partitionmanager
         - audiocd-kio
         - audiocd-kio-doc
-        # --- gaming ---
         - gamemode
         - game-music-emu
         - oversteer-udev
         - openrgb-udev-rules
         - igt-gpu-tools
-        # --- networking you don't use ---
         - samba
         - samba-client
         - samba-client-libs
@@ -179,7 +158,6 @@ modules:
         - autofs
         - davfs2
         - cifs-utils
-        # --- exotic filesystems + clustering ---
         - jfsutils
         - nilfs-utils
         - ocfs2-tools
@@ -187,7 +165,6 @@ modules:
         - hfsutils
         - mtools
         - lrzsz
-        # --- language + OCR data ---
         - gawk-all-langpacks
         - hunspell-en-AU
         - hunspell-en-CA
@@ -207,21 +184,14 @@ modules:
         - tesseract-langpack-pol
         - tesseract-langpack-por
         - tesseract-langpack-spa
-        # --- misc dead weight ---
         - b43-fwcutter
         - b43-openfwwf
         - antiword
         - catdoc
         - input-remapper
-        # --- the phantom "OBS Virtual Camera" at the source. These ship in the
-        #     base image and autoload themselves, stealing /dev/video0 and
-        #     shifting the MX Brio to video1/video2. NOTE: v4l-utils is a
-        #     DIFFERENT package and stays - it's the Brio tooling. ---
         - v4l2loopback
         - kmod-v4l2loopback
 
-  # ------------------------------------------------------------ config files
-  # ------------------------------------------------------------ services
   - type: systemd
     system:
       enabled:
@@ -256,11 +226,10 @@ modules:
         - rpcbind.socket
     user:
       masked:
-        - obex.service              # Bluetooth file transfer; audio is unaffected
-        - podman-auto-update.timer  # nightly container pulls you don't run
+        - obex.service
+        - podman-auto-update.timer
         - speech-dispatcher.socket
 
-  # ------------------------------------------------------------ apps
   - type: default-flatpaks
     notify: true
     system:
