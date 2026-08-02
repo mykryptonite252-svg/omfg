@@ -20,8 +20,6 @@ modules:
         - v4l-utils
         # VS Code, native. The Flatpak cannot self-update and nags permanently.
         - code
-        # REQUIRED: glibc depends on a langpack. Removing glibc-all-langpacks
-        # without this in the same transaction breaks the build.
         - glibc-langpack-en
         # --- ClamAV, native. A sandboxed scanner cannot scan the host. ---
         - clamav              # the scanner engine + clamscan CLI
@@ -190,7 +188,6 @@ modules:
         - mtools
         - lrzsz
         # --- language + OCR data ---
-        - glibc-all-langpacks
         - gawk-all-langpacks
         - hunspell-en-AU
         - hunspell-en-CA
